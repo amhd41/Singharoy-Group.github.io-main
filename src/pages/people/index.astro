@@ -1,0 +1,634 @@
+---
+// src/pages/people.astro
+import { getCollection } from "astro:content";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { uploadPath } from "../../lib/site";
+
+const peopleEntries = await getCollection("people");
+
+/** --- Categorization rules (edit keywords anytime) --- */
+function categorize(role = "") {
+  const r = role.toLowerCase();
+
+  if (
+    r.includes("principal investigator") ||
+    r.includes("lab director") ||
+    r.includes("director") ||
+    r.includes("professor") ||
+    r.includes("research scientist") ||
+    r.includes("associate research scientist") ||
+    r.includes("postdoc") ||
+    r.includes("post-doctoral") ||
+    r.includes("postdoctoral") ||
+    r.includes("program manager") ||
+    r.includes("faculty") ||
+    r.includes("staff")
+  ) return "Senior Personnel";
+
+  if (
+    r.includes("graduate") ||
+    r.includes("phd") ||
+    r.includes("ph.d") ||
+    r.includes("master") ||
+    r.includes("m.s") ||
+    r.includes("ms ") ||
+    r.includes("doctoral")
+  ) return "Graduate Students";
+
+  if (
+    r.includes("undergraduate") ||
+    r.includes("ug") ||
+    r.includes("assistant") ||
+    r.includes("intern")
+  ) return "Undergraduate Assistants";
+
+  return "Other";
+}
+
+const grouped = {
+  "Senior Personnel": [],
+  "Graduate Students": [],
+  "Undergraduate Assistants": [],
+  "Other": [],
+};
+
+for (const p of peopleEntries) {
+  grouped[categorize(p.data.role)]?.push(p);
+}
+
+for (const k of Object.keys(grouped)) {
+  grouped[k].sort((a, b) => (a.data.name ?? "").localeCompare(b.data.name ?? ""));
+}
+
+const sectionOrder = ["Senior Personnel", "Graduate Students", "Undergraduate Assistants", "Other"];
+const showOther = grouped["Other"].length > 0;
+
+const base = import.meta.env.BASE_URL;
+const assetPath = (path = "") => uploadPath(base, path);
+const placeholderImage = assetPath("logo.png");
+---
+
+<style>
+  :global(html) { font-family: Arial, Helvetica, sans-serif; }
+  :global(body) { background: #f6f7fb; margin: 0; color: rgba(0,0,0,.9); }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(246,247,251,.78);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+
+  .navWrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: .9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .75rem;
+    text-decoration: none;
+    color: rgba(0,0,0,.92);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    font-size: 1.08rem;
+    white-space: nowrap;
+    outline: none;
+  }
+
+  .brandText strong { font-weight: 900; }
+
+  .logoWrap{
+    position: relative;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    padding: 3px;
+    background:
+      radial-gradient(24px 24px at 30% 20%, rgba(99,102,241,.40), transparent 65%),
+      radial-gradient(28px 28px at 80% 30%, rgba(56,189,248,.35), transparent 60%),
+      radial-gradient(30px 30px at 60% 85%, rgba(16,185,129,.28), transparent 62%),
+      rgba(255,255,255,.60);
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 10px 18px rgba(0,0,0,.10);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    transform-style: preserve-3d;
+    flex: 0 0 auto;
+  }
+
+  .logo{
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+    display: block;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(255,255,255,.80);
+    transition: transform .18s ease, filter .18s ease;
+  }
+
+  .logoWrap::after{
+    content:"";
+    position:absolute;
+    inset:-6px;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(99,102,241,.28), transparent 55%),
+      radial-gradient(circle at 80% 30%, rgba(56,189,248,.22), transparent 55%),
+      radial-gradient(circle at 60% 85%, rgba(16,185,129,.18), transparent 55%);
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity .18s ease;
+    pointer-events: none;
+  }
+
+  .brand:hover .logoWrap,
+  .brand:focus-visible .logoWrap{
+    transform: translateY(-1px) rotateX(6deg) rotateY(-8deg);
+    border-color: rgba(0,0,0,.14);
+    box-shadow: 0 16px 30px rgba(0,0,0,.16);
+  }
+
+  .brand:hover .logo,
+  .brand:focus-visible .logo{
+    transform: scale(1.02);
+    filter: saturate(1.08) contrast(1.04);
+  }
+
+  .brand:hover .logoWrap::after,
+  .brand:focus-visible .logoWrap::after{
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .logoWrap, .logo, .logoWrap::after { transition: none; }
+    .brand:hover .logoWrap, .brand:focus-visible .logoWrap { transform: none; }
+  }
+
+  .navLinks {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .navA {
+    text-decoration: none;
+    font-size: 0.98rem;
+    padding: .45rem .72rem;
+    border-radius: 999px;
+    color: rgba(0,0,0,.78);
+    border: 1px solid transparent;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+
+  .navA:hover {
+    background: rgba(0,0,0,.04);
+    border-color: rgba(0,0,0,.07);
+    transform: translateY(-1px);
+  }
+
+  .navA.active {
+    background: rgba(0,0,0,.06);
+    border-color: rgba(0,0,0,.10);
+    color: rgba(0,0,0,.9);
+    font-weight: 700;
+  }
+
+  .menuBtn {
+    display: none;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(255,255,255,.85);
+    border-radius: 999px;
+    padding: .5rem .75rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  @media (max-width: 820px) {
+    .menuBtn { display: inline-flex; align-items: center; gap: .45rem; }
+    .navLinks { display: none; width: 100%; margin-top: .75rem; }
+    .navLinks.open { display: flex; }
+    .navWrap { flex-wrap: wrap; align-items: flex-start; }
+  }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 2.25rem 1.25rem 3rem 1.25rem;
+  }
+
+  .hero {
+    border-radius: 26px;
+    padding: 2.35rem 2rem;
+    background:
+      radial-gradient(1200px 420px at 12% 10%, rgba(99,102,241,.24), transparent 60%),
+      radial-gradient(900px 420px at 90% 0%, rgba(56,189,248,.20), transparent 55%),
+      linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.74));
+    border: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 16px 40px rgba(0,0,0,.08);
+    margin-bottom: 2.25rem;
+  }
+
+  .kicker {
+    font-size: 0.92rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(0,0,0,.55);
+    margin: 0 0 .55rem 0;
+  }
+
+  h1 {
+    font-size: 2.85rem;
+    line-height: 1.05;
+    margin: 0 0 .7rem 0;
+    letter-spacing: -0.02em;
+  }
+
+  .sub {
+    font-size: 1.18rem;
+    line-height: 1.55;
+    color: rgba(0,0,0,.72);
+    max-width: 72ch;
+    margin: 0;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin-top: 1rem;
+  }
+
+  .chip {
+    font-size: 0.98rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(255,255,255,.75);
+    color: rgba(0,0,0,.72);
+  }
+
+  .section { margin-top: 1.75rem; }
+  .sectionHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 .9rem 0;
+  }
+  .sectionTitle { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
+  .count { font-size: 0.95rem; color: rgba(0,0,0,.55); margin: 0; }
+
+  .grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  @media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px)  { .grid { grid-template-columns: 1fr; } h1 { font-size: 2.3rem; } .hero { padding: 2rem 1.4rem; } }
+
+  .card {
+    border-radius: 22px;
+    background: rgba(255,255,255,.94);
+    border: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 12px 28px rgba(0,0,0,.07);
+    transition: transform .15s ease, box-shadow .15s ease;
+    overflow: hidden;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(0,0,0,.11); }
+
+  .cardInner { padding: 1.35rem 1.35rem 1.2rem 1.35rem; }
+
+  .top { display: flex; gap: 1.05rem; align-items: center; margin-bottom: .8rem; }
+
+  .avatar {
+    width: 130px;
+    height: 130px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 14px 26px rgba(0,0,0,.14);
+    flex: 0 0 auto;
+    background: #eef2ff;
+  }
+
+  @media (max-width: 640px){
+    .avatar { width: 112px; height: 112px; }
+    .top { gap: .95rem; }
+  }
+
+  .name {
+    font-size: 1.38rem;
+    line-height: 1.18;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .role {
+    display: inline-flex;
+    margin-top: .45rem;
+    font-size: 1rem;
+    padding: .42rem .72rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.08);
+    color: rgba(0,0,0,.72);
+    background: rgba(0,0,0,.03);
+  }
+
+  .bio {
+    font-size: 1.08rem;
+    line-height: 1.62;
+    color: rgba(0,0,0,.74);
+    margin: .9rem 0 .85rem 0;
+  }
+
+  .bio.clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: .25rem;
+  }
+
+  .pill {
+    font-size: 0.98rem;
+    padding: .52rem .8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(255,255,255,.95);
+    color: rgba(0,0,0,.78);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .pill:hover { background: rgba(0,0,0,.04); transform: translateY(-1px); }
+  .pill.secondary { background: rgba(0,0,0,.02); }
+
+  .scholarPreview {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(0,0,0,.07);
+    padding-top: 1rem;
+  }
+
+  .scholarPreviewLabel {
+    font-size: 0.86rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(0,0,0,.5);
+    margin: 0 0 .55rem 0;
+    font-weight: 700;
+  }
+
+  .scholarPreviewCard {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 18px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,249,252,.95));
+    box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+
+  .scholarPreviewCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(0,0,0,.09);
+    border-color: rgba(0,0,0,.12);
+  }
+
+  .scholarPreviewImage {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #fff;
+  }
+
+  .scholarFallback {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .scholarFallbackText {
+    min-width: 0;
+  }
+
+  .scholarFallbackTitle {
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0 0 .22rem 0;
+    color: rgba(0,0,0,.85);
+  }
+
+  .scholarFallbackMeta {
+    margin: 0;
+    font-size: 0.95rem;
+    color: rgba(0,0,0,.58);
+    line-height: 1.4;
+  }
+
+  .scholarBadge {
+    flex: 0 0 auto;
+    padding: .48rem .72rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(0,0,0,.03);
+    font-size: .92rem;
+    font-weight: 700;
+    color: rgba(0,0,0,.72);
+  }
+
+  .divider { height: 1px; background: rgba(0,0,0,.08); margin: 1.6rem 0 0 0; border-radius: 99px; }
+
+  .footer {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 2.5rem 1.25rem;
+    color: rgba(0,0,0,.6);
+    font-size: 0.95rem;
+  }
+  .footerRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(0,0,0,.08);
+    padding-top: 1.25rem;
+  }
+  .footerBrand {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+  }
+  .footerLogo {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid rgba(0,0,0,.08);
+    background: rgba(255,255,255,.8);
+    transition: transform .18s ease, filter .18s ease;
+  }
+  .footerBrand:hover .footerLogo{
+    transform: translateY(-1px) scale(1.03);
+    filter: saturate(1.08) contrast(1.03);
+  }
+  .footerLinks { display: flex; gap: .9rem; flex-wrap: wrap; }
+  .footerLinks a { color: rgba(0,0,0,.65); text-decoration: none; }
+  .footerLinks a:hover { text-decoration: underline; }
+</style>
+
+<SiteLayout title="People | Systems Structural Biology Group">
+<main class="wrap">
+  <section class="hero">
+    <p class="kicker">Our Team</p>
+    <h1>People</h1>
+    <p class="sub">Human-centered AI science for structural discovery and complex systems.</p>
+    <div class="chips">
+      <span class="chip">Structural biology</span>
+      <span class="chip">Complex systems</span>
+      <span class="chip">Human-centered data science</span>
+    </div>
+  </section>
+
+  {sectionOrder.map((sectionName) => {
+    if (sectionName === "Other" && !showOther) return null;
+    const sectionPeople = grouped[sectionName] ?? [];
+    if (sectionPeople.length === 0) return null;
+
+    return (
+      <section class="section">
+        <div class="sectionHead">
+          <h2 class="sectionTitle">{sectionName}</h2>
+          <p class="count">{sectionPeople.length} member{sectionPeople.length === 1 ? "" : "s"}</p>
+        </div>
+
+        <div class="grid">
+          {sectionPeople.map((p) => (
+            <article class="card">
+              <div class="cardInner">
+                <div class="top">
+                  <img
+                    class="avatar"
+                    src={assetPath(p.data.photo ?? "placeholder.jpg")}
+                    alt={`${p.data.name} headshot`}
+                    loading="lazy"
+                    data-fallback={placeholderImage}
+                    onerror="this.onerror=null;this.src=this.dataset.fallback;"
+                  />
+                  <div>
+                    <h3 class="name">{p.data.name}</h3>
+                    <span class="role">{p.data.role}</span>
+                  </div>
+                </div>
+
+                {p.data.bio && (
+                  <>
+                    <p class="bio clamped" data-bio>{p.data.bio}</p>
+                    <button class="pill secondary" type="button" data-toggle>Read more</button>
+                  </>
+                )}
+
+                {p.data.links?.scholar && (
+                  <div class="scholarPreview">
+                    <p class="scholarPreviewLabel">Google Scholar</p>
+
+                    <a
+                      class="scholarPreviewCard"
+                      href={p.data.links.scholar}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${p.data.name}'s Google Scholar profile`}
+                    >
+                      {p.data.links?.scholar_preview_image ? (
+                        <img
+                          class="scholarPreviewImage"
+                          src={assetPath(p.data.links.scholar_preview_image)}
+                          alt={`${p.data.name} Google Scholar preview`}
+                          loading="lazy"
+                          data-fallback={placeholderImage}
+                          onerror="this.onerror=null;this.src=this.dataset.fallback;"
+                        />
+                      ) : (
+                        <div class="scholarFallback">
+                          <div class="scholarFallbackText">
+                            <p class="scholarFallbackTitle">{p.data.name}</p>
+                            <p class="scholarFallbackMeta">
+                              View Google Scholar profile and citation overview
+                            </p>
+                          </div>
+                          <span class="scholarBadge">Scholar</span>
+                        </div>
+                      )}
+                    </a>
+                  </div>
+                )}
+
+                <div class="actions">
+                  {p.data.links?.email && (
+                    <a class="pill" href={`mailto:${p.data.links.email}`}>Email</a>
+                  )}
+                  {p.data.links?.scholar && (
+                    <a class="pill" href={p.data.links.scholar} target="_blank" rel="noreferrer">Scholar</a>
+                  )}
+                  {p.data.links?.github && (
+                    <a class="pill" href={p.data.links.github} target="_blank" rel="noreferrer">GitHub</a>
+                  )}
+                  {p.data.links?.linkedin && (
+                    <a class="pill" href={p.data.links.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+                  )}
+                  {p.data.links?.darpa && (
+                    <a class="pill" href={p.data.links.darpa} target="_blank" rel="noreferrer">DARPA</a>
+                  )}
+                  {p.data.links?.darpa_nodes && (
+                    <a class="pill" href={p.data.links.darpa_nodes} target="_blank" rel="noreferrer">NODES</a>
+                  )}
+                  {p.data.links?.darpa_sms && (
+                    <a class="pill" href={p.data.links.darpa_sms} target="_blank" rel="noreferrer">SMS</a>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div class="divider"></div>
+      </section>
+    );
+  })}
+</main>
+
+<script>
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-toggle]");
+    if (!t) return;
+
+    const card = t.closest("article");
+    const bio = card?.querySelector("[data-bio]");
+    if (!bio) return;
+
+    const isClamped = bio.classList.toggle("clamped");
+    t.textContent = isClamped ? "Read more" : "Read less";
+  });
+</script>
+</SiteLayout>
