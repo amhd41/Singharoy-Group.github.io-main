@@ -1,6 +1,6 @@
 ---
-import SiteLayout from "../../layouts/SiteLayout.astro";
-import { withBase as withSiteBase } from "../../lib/site";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { withBase as withSiteBase } from "../lib/site";
 
 const base = import.meta.env.BASE_URL;
 const withBase = (path = "") => withSiteBase(base, path);
