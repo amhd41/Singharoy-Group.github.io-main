@@ -12,17 +12,17 @@ const topicDefinitions = [
   {
     slug: "structural-biology",
     label: "Structural Biology",
-    matchTags: ["Biophysics", "Structure Prediction", "Electrostatics"],
+    matchTags: ["Structural Biology", "Biophysics", "Structure Prediction", "Electrostatics"],
   },
   {
     slug: "complex-systems",
     label: "Complex Systems",
-    matchTags: ["Molecular Dynamics", "Brownian Dynamics", "Thermodynamic Ensembles", "MELD"],
+    matchTags: ["Complex Systems", "Molecular Dynamics", "Brownian Dynamics", "Thermodynamic Ensembles", "MELD"],
   },
   {
     slug: "multiscale-modeling",
     label: "Multiscale Modeling",
-    matchTags: ["Molecular Dynamics", "Brownian Dynamics", "MELD", "Thermodynamic Ensembles"],
+    matchTags: ["Multiscale Modeling", "Molecular Dynamics", "Brownian Dynamics", "MELD", "Thermodynamic Ensembles"],
   },
   {
     slug: "applied-deep-learning",
@@ -32,7 +32,7 @@ const topicDefinitions = [
   {
     slug: "human-computer-interaction",
     label: "Human Computer Interaction",
-    matchTags: ["Human Computer Interaction"],
+    matchTags: ["Human Computer Interaction", "STEM Education"],
   },
 ];
 
@@ -379,6 +379,73 @@ const stats = [
     font-size: 1rem;
   }
 
+  .projectLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    border-radius: 16px;
+    padding: .68rem .9rem;
+    text-decoration: none;
+    font-size: .95rem;
+    font-weight: 800;
+    border: 1px solid rgba(0,0,0,.10);
+    background: #111827;
+    color: white;
+    transition: transform .15s ease, background .15s ease;
+  }
+
+  .projectLink:hover,
+  .projectLink:focus-visible {
+    transform: translateY(-1px);
+    background: #1f2937;
+  }
+
+  .publicationBlock {
+    margin-top: 1rem;
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,.07);
+    background: rgba(0,0,0,.02);
+    padding: .9rem;
+  }
+
+  .publicationList {
+    display: grid;
+    gap: .65rem;
+    margin-top: .7rem;
+  }
+
+  .publicationButton {
+    display: block;
+    border-radius: 14px;
+    padding: .75rem .85rem;
+    border: 1px solid rgba(0,0,0,.08);
+    background: white;
+    color: rgba(0,0,0,.86);
+    text-decoration: none;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+
+  .publicationButton:hover,
+  .publicationButton:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(0,0,0,.18);
+  }
+
+  .publicationTitle {
+    margin: 0;
+    font-size: .98rem;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
+  .publicationMeta {
+    margin: .24rem 0 0 0;
+    color: rgba(0,0,0,.58);
+    font-size: .92rem;
+    line-height: 1.35;
+  }
+
   .tagRow {
     display: flex;
     flex-wrap: wrap;
@@ -590,6 +657,33 @@ const stats = [
 
                 <h2 class="projectTitle">{project.data.title}</h2>
                 <p class="projectText">{project.data.summary}</p>
+
+                {project.data.link && (
+                  <a class="projectLink" href={project.data.link} target="_blank" rel="noreferrer">
+                    {project.data.link_label ?? "Open project link"}
+                  </a>
+                )}
+
+                {project.data.publications && project.data.publications.length > 0 && (
+                  <div class="publicationBlock">
+                    <p class="sideLabel">Publications</p>
+                    <div class="publicationList">
+                      {project.data.publications.map((publication) => (
+                        <a
+                          class="publicationButton"
+                          href={publication.link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <p class="publicationTitle">{publication.title}</p>
+                          <p class="publicationMeta">
+                            {[publication.venue, publication.year].filter(Boolean).join(" - ")}
+                          </p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* --- MEDIA COMPONENT --- */}
                 {(project.data.video || project.data.thumbnail) && (
