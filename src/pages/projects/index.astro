@@ -8,9 +8,68 @@ const withBase = (path = "") => withSiteBase(base, path);
 
 const projectEntries = await getCollection("projects");
 
+const topicDefinitions = [
+  {
+    slug: "structural-biology",
+    label: "Structural Biology",
+    matchTags: ["Biophysics", "Structure Prediction", "Electrostatics"],
+  },
+  {
+    slug: "complex-systems",
+    label: "Complex Systems",
+    matchTags: ["Molecular Dynamics", "Brownian Dynamics", "Thermodynamic Ensembles", "MELD"],
+  },
+  {
+    slug: "multiscale-modeling",
+    label: "Multiscale Modeling",
+    matchTags: ["Molecular Dynamics", "Brownian Dynamics", "MELD", "Thermodynamic Ensembles"],
+  },
+  {
+    slug: "applied-deep-learning",
+    label: "Applied Deep Learning",
+    matchTags: ["Applied Deep Learning", "Deep Learning", "SE3 Convolutional Networks"],
+  },
+  {
+    slug: "human-computer-interaction",
+    label: "Human Computer Interaction",
+    matchTags: ["Human Computer Interaction"],
+  },
+];
+
+const tagMatchesTopic = (tag = "", topic) => {
+  const normalizedTag = tag.toLowerCase();
+  return topic.matchTags.some((matchTag) => normalizedTag.includes(matchTag.toLowerCase()));
+};
+
+const topicsForProject = (project) =>
+  topicDefinitions.filter((topic) =>
+    project.data.tags?.some((tag) => tagMatchesTopic(tag, topic))
+  );
+
+const projectTopicMap = Object.fromEntries(
+  projectEntries.map((project) => [project.id, topicsForProject(project).map((topic) => topic.slug)])
+);
+
+const topicSummaries = topicDefinitions.map((topic) => {
+  const projects = projectEntries.filter((project) => projectTopicMap[project.id]?.includes(topic.slug));
+  const people = new Map();
+
+  for (const project of projects) {
+    for (const member of project.data.team ?? []) {
+      people.set(member.name, member);
+    }
+  }
+
+  return {
+    ...topic,
+    projects,
+    people: Array.from(people.values()).sort((a, b) => a.name.localeCompare(b.name)),
+  };
+});
+
 const stats = [
   { label: "Active Projects", value: String(projectEntries.length) },
-  { label: "Research Areas", value: "6+" },
+  { label: "Research Areas", value: String(topicDefinitions.length) },
   { label: "Team Members", value: "10+" },
   { label: "Partner Sites", value: "Multi-site" },
 ];
@@ -128,6 +187,122 @@ const stats = [
 
   .section {
     margin-top: 1.7rem;
+  }
+
+  .topicMap {
+    border-radius: 24px;
+    background: rgba(255,255,255,.94);
+    border: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 12px 28px rgba(0,0,0,.07);
+    padding: 1.3rem;
+  }
+
+  .topicHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .topicTitle {
+    margin: 0;
+    font-size: 1.45rem;
+    letter-spacing: -0.01em;
+  }
+
+  .topicSub {
+    margin: .35rem 0 0 0;
+    color: rgba(0,0,0,.66);
+    line-height: 1.55;
+  }
+
+  .topicPills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+  }
+
+  .topicPill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: .48rem .78rem;
+    font-size: .92rem;
+    text-decoration: none;
+    border: 1px solid rgba(0,0,0,.10);
+    background: white;
+    color: rgba(0,0,0,.74);
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+
+  .topicPill:hover,
+  .topicPill:focus-visible,
+  .topicPill.active {
+    background: #111827;
+    border-color: #111827;
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .topicResult {
+    display: none;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,.07);
+    background: rgba(0,0,0,.02);
+    padding: 1rem;
+  }
+
+  .topicResult.active {
+    display: block;
+  }
+
+  .topicResultGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .miniList {
+    display: grid;
+    gap: .6rem;
+    margin-top: .75rem;
+  }
+
+  .miniLink,
+  .miniItem {
+    display: block;
+    border-radius: 16px;
+    padding: .75rem .85rem;
+    border: 1px solid rgba(0,0,0,.07);
+    background: white;
+    text-decoration: none;
+    color: rgba(0,0,0,.84);
+  }
+
+  .miniTitle {
+    margin: 0;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  .miniMeta {
+    margin: .22rem 0 0 0;
+    color: rgba(0,0,0,.6);
+    font-size: .93rem;
+    line-height: 1.35;
+  }
+
+  .emptyTopic {
+    margin: .75rem 0 0 0;
+    color: rgba(0,0,0,.62);
+    line-height: 1.55;
+  }
+
+  .projectCard.isHidden {
+    display: none;
   }
 
   .projectsGrid {
@@ -303,7 +478,8 @@ const stats = [
     .hero { padding: 2rem 1.2rem; }
     .wrap { padding: 1.5rem 1rem 2.2rem 1rem; }
     .statsGrid,
-    .metaGrid {
+    .metaGrid,
+    .topicResultGrid {
       grid-template-columns: 1fr;
     }
   }
@@ -336,10 +512,73 @@ const stats = [
       </div>
     </section>
 
+    <section id="topic-map" class="section topicMap" data-topic-map>
+      <div class="topicHead">
+        <div>
+          <p class="kicker">Topic Map</p>
+          <h2 class="topicTitle" data-topic-heading>Choose a topic to see linked projects and people</h2>
+          <p class="topicSub">
+            The topic chips from the People page open this view and highlight the projects whose tags match that topic.
+          </p>
+        </div>
+
+        <div class="topicPills" aria-label="Project topics">
+          {topicSummaries.map((topic) => (
+            <a
+              class="topicPill"
+              href={`${withBase("/projects")}?topic=${topic.slug}#topic-map`}
+              data-topic-link={topic.slug}
+              data-topic-label={topic.label}
+            >
+              {topic.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {topicSummaries.map((topic) => (
+        <div class="topicResult" data-topic-result={topic.slug} data-topic-label={topic.label}>
+          <div class="topicResultGrid">
+            <div>
+              <p class="sideLabel">Associated projects</p>
+              {topic.projects.length > 0 ? (
+                <div class="miniList">
+                  {topic.projects.map((project) => (
+                    <a class="miniLink" href={`#${project.id}`}>
+                      <p class="miniTitle">{project.data.title}</p>
+                      <p class="miniMeta">{project.data.phase} - Lead: {project.data.lead}</p>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p class="emptyTopic">No projects are tagged with this topic yet.</p>
+              )}
+            </div>
+
+            <div>
+              <p class="sideLabel">People on those projects</p>
+              {topic.people.length > 0 ? (
+                <div class="miniList">
+                  {topic.people.map((person) => (
+                    <a class="miniLink" href={withBase(person.href)}>
+                      <p class="miniTitle">{person.name}</p>
+                      <p class="miniMeta">{person.role}</p>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p class="emptyTopic">No people are associated through tagged projects yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+
     <section id="projects" class="section">
       <div class="projectsGrid">
         {projectEntries.map((project) => (
-          <article class="projectCard" id={project.id}>
+          <article class="projectCard" id={project.id} data-project-topics={projectTopicMap[project.id].join(" ")}>
             <div class="projectGrid">
               <div>
                 <div class="statusRow">
@@ -427,4 +666,53 @@ const stats = [
       </div>
     </section>
   </main>
+
+  <script>
+    const topicLinks = Array.from(document.querySelectorAll("[data-topic-link]"));
+    const topicResults = Array.from(document.querySelectorAll("[data-topic-result]"));
+    const projectCards = Array.from(document.querySelectorAll("[data-project-topics]"));
+    const topicHeading = document.querySelector("[data-topic-heading]");
+
+    const getSelectedTopic = () => new URLSearchParams(window.location.search).get("topic") || "";
+
+    const showTopic = (topicSlug) => {
+      const selectedLink = topicLinks.find((link) => link.dataset.topicLink === topicSlug);
+      const selectedLabel = selectedLink?.dataset.topicLabel;
+
+      topicLinks.forEach((link) => {
+        link.classList.toggle("active", link.dataset.topicLink === topicSlug);
+      });
+
+      topicResults.forEach((result) => {
+        result.classList.toggle("active", result.dataset.topicResult === topicSlug);
+      });
+
+      projectCards.forEach((card) => {
+        const topics = card.dataset.projectTopics?.split(" ").filter(Boolean) ?? [];
+        card.classList.toggle("isHidden", Boolean(topicSlug) && !topics.includes(topicSlug));
+      });
+
+      if (topicHeading) {
+        topicHeading.textContent = selectedLabel
+          ? `${selectedLabel}: projects and people`
+          : "Choose a topic to see linked projects and people";
+      }
+    };
+
+    topicLinks.forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const topicSlug = link.dataset.topicLink;
+        if (!topicSlug) return;
+
+        event.preventDefault();
+        const nextUrl = `${window.location.pathname}?topic=${topicSlug}#topic-map`;
+        window.history.pushState({}, "", nextUrl);
+        showTopic(topicSlug);
+        document.querySelector("#topic-map")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    window.addEventListener("popstate", () => showTopic(getSelectedTopic()));
+    showTopic(getSelectedTopic());
+  </script>
 </SiteLayout>

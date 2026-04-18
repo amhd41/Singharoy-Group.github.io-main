@@ -2,7 +2,7 @@
 // src/pages/people.astro
 import { getCollection } from "astro:content";
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import { uploadPath } from "../../lib/site";
+import { uploadPath, withBase } from "../../lib/site";
 
 const peopleEntries = await getCollection("people");
 
@@ -65,7 +65,16 @@ const showOther = grouped["Other"].length > 0;
 
 const base = import.meta.env.BASE_URL;
 const assetPath = (path = "") => uploadPath(base, path);
+const sitePath = (path = "") => withBase(base, path);
 const placeholderImage = assetPath("logo.png");
+
+const keywords = [
+  { label: "Structural Biology", href: sitePath("/projects?topic=structural-biology#topic-map") },
+  { label: "Complex Systems", href: sitePath("/projects?topic=complex-systems#topic-map") },
+  { label: "Multiscale Modeling", href: sitePath("/projects?topic=multiscale-modeling#topic-map") },
+  { label: "Applied Deep Learning", href: sitePath("/projects?topic=applied-deep-learning#topic-map") },
+  { label: "Human Computer Interaction", href: sitePath("/projects?topic=human-computer-interaction#topic-map") },
+];
 ---
 
 <style>
@@ -276,6 +285,15 @@ const placeholderImage = assetPath("logo.png");
     border: 1px solid rgba(0,0,0,.10);
     background: rgba(255,255,255,.75);
     color: rgba(0,0,0,.72);
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+
+  .chip:hover,
+  .chip:focus-visible {
+    background: rgba(255,255,255,.95);
+    border-color: rgba(0,0,0,.18);
+    transform: translateY(-1px);
   }
 
   .section { margin-top: 1.75rem; }
@@ -505,9 +523,9 @@ const placeholderImage = assetPath("logo.png");
     <h1>People</h1>
     <p class="sub">Human-centered AI science for structural discovery and complex systems.</p>
     <div class="chips">
-      <span class="chip">Structural biology</span>
-      <span class="chip">Complex systems</span>
-      <span class="chip">Human-centered data science</span>
+      {keywords.map((keyword) => (
+        <a class="chip" href={keyword.href}>{keyword.label}</a>
+      ))}
     </div>
   </section>
 
