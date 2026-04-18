@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://singharoy-group.github.io',
-  base: '/',
+  site: 'https://amhd41.github.io',
+  base: '/Singharoy-Group.github.io-main/',
 });
