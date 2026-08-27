@@ -78,11 +78,71 @@ const stats = [
 <style>
   :global(html) { font-family: Arial, Helvetica, sans-serif; }
   :global(body) { background: #f6f7fb; margin: 0; color: rgba(0,0,0,.9); }
+  :global([id]) { scroll-margin-top: 104px; }
 
   .wrap {
-    max-width: 1240px;
+    max-width: 1440px;
     margin: 0 auto;
     padding: 2.25rem 1.25rem 3rem 1.25rem;
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: start;
+  }
+
+  .contentNav {
+    position: sticky;
+    top: 84px;
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,.07);
+    background: rgba(255,255,255,.86);
+    box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    padding: 1rem;
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+  }
+
+  .contentNavTitle {
+    margin: 0 0 .75rem 0;
+    font-size: .92rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(0,0,0,.55);
+    font-weight: 800;
+  }
+
+  .contentNavList {
+    display: grid;
+    gap: .25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contentNavLink {
+    display: block;
+    border-radius: 10px;
+    padding: .48rem .55rem;
+    color: rgba(0,0,0,.72);
+    text-decoration: none;
+    font-size: .94rem;
+    line-height: 1.35;
+  }
+
+  .contentNavLink:hover,
+  .contentNavLink:focus-visible {
+    background: rgba(0,0,0,.05);
+    color: rgba(0,0,0,.92);
+  }
+
+  .contentNavSub {
+    margin-top: .5rem;
+    padding-top: .5rem;
+    border-top: 1px solid rgba(0,0,0,.08);
+  }
+
+  .contentColumn {
+    min-width: 0;
   }
 
   .hero {
@@ -200,7 +260,7 @@ const stats = [
   .topicHead {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 1rem;
     flex-wrap: wrap;
     margin-bottom: 1rem;
@@ -218,33 +278,35 @@ const stats = [
     line-height: 1.55;
   }
 
-  .topicPills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .55rem;
+  .topicControls {
+    display: grid;
+    gap: .65rem;
+    min-width: min(320px, 100%);
   }
 
-  .topicPill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    padding: .48rem .78rem;
-    font-size: .92rem;
-    text-decoration: none;
+  .topicSelectWrap {
+    display: grid;
+    gap: .38rem;
+  }
+
+  .topicSelectLabel {
+    margin: 0;
+    font-size: .86rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(0,0,0,.5);
+    font-weight: 700;
+  }
+
+  .topicSelect {
+    width: 100%;
+    border-radius: 14px;
     border: 1px solid rgba(0,0,0,.10);
     background: white;
-    color: rgba(0,0,0,.74);
-    transition: background .15s ease, border-color .15s ease, transform .15s ease;
-  }
-
-  .topicPill:hover,
-  .topicPill:focus-visible,
-  .topicPill.active {
-    background: #111827;
-    border-color: #111827;
-    color: white;
-    transform: translateY(-1px);
+    color: rgba(0,0,0,.86);
+    padding: .72rem .9rem;
+    font-size: .96rem;
+    line-height: 1.2;
   }
 
   .topicResult {
@@ -534,6 +596,19 @@ const stats = [
   }
 
   @media (max-width: 1000px) {
+    .wrap {
+      grid-template-columns: 1fr;
+    }
+
+    .contentNav {
+      position: static;
+      max-height: none;
+    }
+
+    .contentNavList {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .heroGrid,
     .projectGrid {
       grid-template-columns: 1fr;
@@ -544,6 +619,9 @@ const stats = [
     h1 { font-size: 2.3rem; }
     .hero { padding: 2rem 1.2rem; }
     .wrap { padding: 1.5rem 1rem 2.2rem 1rem; }
+    .contentNavList {
+      grid-template-columns: 1fr;
+    }
     .statsGrid,
     .metaGrid,
     .topicResultGrid {
@@ -553,8 +631,22 @@ const stats = [
 </style>
 
 <SiteLayout title="Projects | Systems Structural Biology Group">
-  <main class="wrap">
-    <section class="hero">
+  <main id="top" class="wrap">
+    <aside class="contentNav" aria-label="Projects contents">
+      <p class="contentNavTitle">Contents</p>
+      <ol class="contentNavList">
+        <li><a class="contentNavLink" href="#projects">Projects</a></li>
+      </ol>
+
+      <ol class="contentNavList contentNavSub">
+        {projectEntries.map((project) => (
+          <li><a class="contentNavLink" href={`#${project.id}`}>{project.data.title}</a></li>
+        ))}
+      </ol>
+    </aside>
+
+    <div class="contentColumn">
+      <section class="hero">
       <div class="heroGrid">
         <div>
           <p class="kicker">Systems Structural Biology Group</p>
@@ -581,25 +673,17 @@ const stats = [
 
     <section id="topic-map" class="section topicMap" data-topic-map>
       <div class="topicHead">
-        <div>
-          <p class="kicker">Topic Map</p>
-          <h2 class="topicTitle" data-topic-heading>Choose a topic to see linked projects and people</h2>
-          <p class="topicSub">
-            The topic chips from the People page open this view and highlight the projects whose tags match that topic.
-          </p>
-        </div>
+        <div class="topicControls">
+          <div class="topicSelectWrap">
+            <label class="topicSelectLabel" for="topic-select">Research area</label>
+            <select id="topic-select" class="topicSelect" data-topic-select>
+              <option value="">All research areas</option>
+              {topicSummaries.map((topic) => (
+                <option value={topic.slug}>{topic.label}</option>
+              ))}
+            </select>
+          </div>
 
-        <div class="topicPills" aria-label="Project topics">
-          {topicSummaries.map((topic) => (
-            <a
-              class="topicPill"
-              href={`${withBase("/projects")}?topic=${topic.slug}#topic-map`}
-              data-topic-link={topic.slug}
-              data-topic-label={topic.label}
-            >
-              {topic.label}
-            </a>
-          ))}
         </div>
       </div>
 
@@ -759,23 +843,20 @@ const stats = [
         ))}
       </div>
     </section>
+    </div>
   </main>
 
   <script>
-    const topicLinks = Array.from(document.querySelectorAll("[data-topic-link]"));
     const topicResults = Array.from(document.querySelectorAll("[data-topic-result]"));
     const projectCards = Array.from(document.querySelectorAll("[data-project-topics]"));
-    const topicHeading = document.querySelector("[data-topic-heading]");
+    const topicSelect = document.querySelector("[data-topic-select]");
 
     const getSelectedTopic = () => new URLSearchParams(window.location.search).get("topic") || "";
 
     const showTopic = (topicSlug) => {
-      const selectedLink = topicLinks.find((link) => link.dataset.topicLink === topicSlug);
-      const selectedLabel = selectedLink?.dataset.topicLabel;
-
-      topicLinks.forEach((link) => {
-        link.classList.toggle("active", link.dataset.topicLink === topicSlug);
-      });
+      if (topicSelect) {
+        topicSelect.value = topicSlug;
+      }
 
       topicResults.forEach((result) => {
         result.classList.toggle("active", result.dataset.topicResult === topicSlug);
@@ -786,24 +867,16 @@ const stats = [
         card.classList.toggle("isHidden", Boolean(topicSlug) && !topics.includes(topicSlug));
       });
 
-      if (topicHeading) {
-        topicHeading.textContent = selectedLabel
-          ? `${selectedLabel}: projects and people`
-          : "Choose a topic to see linked projects and people";
-      }
     };
 
-    topicLinks.forEach((link) => {
-      link.addEventListener("click", (event) => {
-        const topicSlug = link.dataset.topicLink;
-        if (!topicSlug) return;
-
-        event.preventDefault();
-        const nextUrl = `${window.location.pathname}?topic=${topicSlug}#topic-map`;
-        window.history.pushState({}, "", nextUrl);
-        showTopic(topicSlug);
-        document.querySelector("#topic-map")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+    topicSelect?.addEventListener("change", (event) => {
+      const topicSlug = event.target.value;
+      const nextUrl = topicSlug
+        ? `${window.location.pathname}?topic=${topicSlug}#topic-map`
+        : `${window.location.pathname}#topic-map`;
+      window.history.pushState({}, "", nextUrl);
+      showTopic(topicSlug);
+      document.querySelector("#topic-map")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
     window.addEventListener("popstate", () => showTopic(getSelectedTopic()));
